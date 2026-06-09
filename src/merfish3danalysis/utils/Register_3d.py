@@ -121,8 +121,8 @@ def main():
     )
 
     # Saving outputs
-    np.save(args.out_moving, moving_corr)
-    np.save(args.out_tomove, tomove_corr)
+    tiff.imwrite(args.out_moving, moving_corr.astype(np.float32))
+    tiff.imwrite(args.out_tomove, tomove_corr.astype(np.float32))
     np.save(args.out_warp, warp_field)
     save_overlay_png(reference=reference, moved=moving_corr, out_path=args.out_overlay )
     print("Deformation correction complete.")
