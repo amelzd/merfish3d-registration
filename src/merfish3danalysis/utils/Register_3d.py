@@ -4,7 +4,6 @@ import numpy as np
 import cupy as cp
 import matplotlib.pyplot as plt
 import tifffile as tiff
-pip install matplotlib
 
 from warpfield.warp import warp_volume
 from merfish3danalysis.utils.registration import compute_warpfield
