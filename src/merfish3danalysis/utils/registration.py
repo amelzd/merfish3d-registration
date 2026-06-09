@@ -66,14 +66,15 @@ def compute_warpfield(
         recipe.levels[-1].smooth.sigmas = [1.0, 3.0, 3.0]
         recipe.levels[-1].smooth.long_range_ratio = 0.1
         recipe.levels[-1].repeats = 2
-
+        '''
         recipe.add_level(block_size=[5, 15, 15])
         recipe.levels[-1].block_stride = 0.75
         recipe.levels[-1].smooth.sigmas = [1.5, 5.0, 5.0]
         recipe.levels[-1].smooth.long_range_ratio = 0.1
         recipe.levels[-1].repeats = 2
+        '''
     else:
-        recipe.add_level(block_size=[21, 73, 73])
+        recipe.add_level(block_size=[11, 31, 31])
         recipe.levels[-1].block_stride = 0.75
         recipe.levels[-1].smooth.sigmas = [1.0, 3.0, 3.0]
         recipe.levels[-1].smooth.long_range_ratio = 0.1
