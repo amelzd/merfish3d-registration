@@ -4,9 +4,93 @@ import numpy as np
 import cupy as cp
 import matplotlib.pyplot as plt
 import tifffile as tiff
+from numpy.typing import ArrayLike
 
 from warpfield.warp import warp_volume
 from merfish3danalysis.utils.registration import compute_warpfield
+
+import gc
+from collections.abc import Sequence
+
+
+
+def compute_warpfield(
+    img_ref: ArrayLike, img_trg: ArrayLike, gpu_id: int = 0
+) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
+    """
+    Compute the warpfield to warp a target image to a reference image.
+
+    Parameters
+    ----------
+    img_ref: ArrayLike
+        reference image
+    img_trg: ArrayLike
+        moving image
+    gpu_id: int, default 0
+        GPU ID to use for computation
+
+    Returns
+    -------
+    warp_field: ArrayLike
+        warpfield matrix
+    """
+    import cupy as cp
+
+    cp.cuda.Device(gpu_id).use()
+
+    from warpfield import Recipe, register_volumes
+
+    recipe = (
+        Recipe()
+    )  # initialized with a translation level, followed by an affine registration level
+    recipe.pre_filter.clip_thresh = 0  # clip DC background, if present
+    recipe.pre_filter.soft_edge = [4, 32, 32]
+
+    # affine level properties
+    recipe.levels[-1].repeats = 0
+
+    if max(img_ref.shape) > 2048:
+        recipe.add_level(block_size=[11, 31, 31])
+        recipe.levels[-1].block_stride = 0.85
+        recipe.levels[-1].smooth.sigmas = [1.0, 3.0, 3.0]
+        recipe.levels[-1].smooth.long_range_ratio = 0.1
+        recipe.levels[-1].repeats = 2
+        '''
+        recipe.add_level(block_size=[5, 15, 15])
+        recipe.levels[-1].block_stride = 0.75
+        recipe.levels[-1].smooth.sigmas = [1.5, 5.0, 5.0]
+        recipe.levels[-1].smooth.long_range_ratio = 0.1
+        recipe.levels[-1].repeats = 2
+        '''
+    else:
+        recipe.add_level(block_size=[11, 31, 31])
+        recipe.levels[-1].block_stride = 0.75
+        recipe.levels[-1].smooth.sigmas = [1.0, 3.0, 3.0]
+        recipe.levels[-1].smooth.long_range_ratio = 0.1
+        recipe.levels[-1].repeats = 2
+
+        recipe.add_level(block_size=[5, 17, 17])
+        recipe.levels[-1].block_stride = 0.75
+        recipe.levels[-1].smooth.sigmas = [1.5, 5.0, 5.0]
+        recipe.levels[-1].smooth.long_range_ratio = 0.1
+        recipe.levels[-1].repeats = 2
+
+    warped_image, warp_map, _ = register_volumes(
+        ref=img_ref,
+        vol=img_trg,
+        recipe=recipe )
+    warped_image = cp.asnumpy(warped_image).astype(np.float32)
+    warp_field = cp.asnumpy(warp_map.warp_field).astype(np.float32)
+    block_size = cp.asnumpy(warp_map.block_size).astype(np.float32)
+    block_stride = cp.asnumpy(warp_map.block_stride).astype(np.float32)
+
+    del warp_map
+    gc.collect()
+    cp.cuda.Stream.null.synchronize()
+    cp.get_default_memory_pool().free_all_blocks()
+    cp.get_default_pinned_memory_pool().free_all_blocks()
+
+    return (warped_image, warp_field, block_size, block_stride)
 
 def save_overlay_png(reference, moved, out_path, z_slice=None):
     """
