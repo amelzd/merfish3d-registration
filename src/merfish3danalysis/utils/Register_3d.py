@@ -17,7 +17,7 @@ conda create -n warpfield python=3.11
 conda activate warpfield
 pip install cupy-cuda12x
 pip install warpfield
-conda install numpy matplotlib tifffile
+python -m pip install matplotlib tifffile
 '''
 
 
