@@ -111,7 +111,8 @@ def main():
     reference = tiff.imread(args.reference).astype(np.float32)
     moving = tiff.imread(args.moving).astype(np.float32)
     tomove = tiff.imread(args.tomove).astype(np.float32)
-
+    moving = moving[:, ::2, ::2]
+    reference = reference[:, ::2, ::2]
     # Deformation correction
     moving_corr, tomove_corr, warp_field = correct_deformation(
         reference,
