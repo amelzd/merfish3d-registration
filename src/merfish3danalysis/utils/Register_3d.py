@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 import cupy as cp
 import matplotlib.pyplot as plt
+import tifffile as tiff
 
 from warpfield.warp import warp_volume
 from merfish3danalysis.utils.registration import compute_warpfield
@@ -15,11 +16,11 @@ def save_overlay_png(reference, moved, out_path, z_slice=None):
         - B	moved
     """
 
-    def get_slice(img):
+    def get_slice(img, z_slice=None, axis=0):
         if img.ndim == 3:
-            z = img.shape[0] // 2 if z_slice is None else z_slice
-            return img[z]
-        return img
+            z = img.shape[axis] // 2 if z_slice is None else z_slice
+            return np.take(img, z, axis=axis)
+    return img
 
     ref = get_slice(reference).astype(np.float32)
     mov = get_slice(moved).astype(np.float32)
@@ -95,8 +96,8 @@ def correct_deformation(
 def main():
     parser = argparse.ArgumentParser( description="Apply GPU deformation correction (warpfield optical flow).")
 
-    parser.add_argument("--reference", required=True, help="Reference image (.npy)")
-    parser.add_argument("--moving", required=True, help="Moving image (.npy)")
+    parser.add_argument("--reference", required=True, help="Reference image ")
+    parser.add_argument("--moving", required=True, help="Moving image ")
     parser.add_argument("--tomove", required=True, help="Image to apply same correction")
     parser.add_argument("--out_moving", required=True, help="Output corrected moving")
     parser.add_argument("--out_tomove", required=True, help="Output corrected tomove")
@@ -107,9 +108,9 @@ def main():
     args = parser.parse_args()
 
     # Load images
-    reference = np.load(args.reference).astype(np.float32)
-    moving = np.load(args.moving).astype(np.float32)
-    tomove = np.load(args.tomove).astype(np.float32)
+    reference = tiff.imread(args.reference).astype(np.float32)
+    moving = tiff.imread(args.moving).astype(np.float32)
+    tomove = tiff.imread(args.tomove).astype(np.float32)
 
     # Deformation correction
     moving_corr, tomove_corr, warp_field = correct_deformation(
