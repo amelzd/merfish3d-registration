@@ -15,7 +15,7 @@ from collections.abc import Sequence
 #create environment without merfish install
 conda create -n warpfield python=3.11
 conda activate warpfield
-pip install cupy-cuda12x
+conda install -c conda-forge cupy cuda-version=12 
 pip install warpfield
 python -m pip install matplotlib tifffile
 '''
