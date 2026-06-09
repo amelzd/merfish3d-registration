@@ -89,7 +89,7 @@ def compute_warpfield(
         ref=img_ref,
         vol=img_trg,
         recipe=recipe,
-        verbose=False )
+        verbose=False,gpu_id )
     warped_image = cp.asnumpy(warped_image).astype(np.float32)
     warp_field = cp.asnumpy(warp_map.warp_field).astype(np.float32)
     block_size = cp.asnumpy(warp_map.block_size).astype(np.float32)
