@@ -88,8 +88,7 @@ def compute_warpfield(
     warped_image, warp_map, _ = register_volumes(
         ref=img_ref,
         vol=img_trg,
-        recipe=recipe,
-        verbose=False,gpu_id )
+        recipe=recipe )
     warped_image = cp.asnumpy(warped_image).astype(np.float32)
     warp_field = cp.asnumpy(warp_map.warp_field).astype(np.float32)
     block_size = cp.asnumpy(warp_map.block_size).astype(np.float32)
