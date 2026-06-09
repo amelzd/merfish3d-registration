@@ -164,11 +164,16 @@ def correct_deformation(
     block_stride = cp.asarray(block_stride, dtype=cp.float32)
     offset = -(block_size / block_stride) / 2
 
+    print(type(tomove_image))
+    print(type(warp_field))
+    print(type(block_stride))
+    print(type(offset))
+    
     tomove_corrected_cp = warp_volume(
-        tomove_image.astype(np.float32),
-        warp_field.astype(np.float32),
-        cp.asarray(block_stride, dtype=cp.float32),
-        cp.asarray(offset)  )
+    cp.asarray(tomove_image, dtype=cp.float32),
+    cp.asarray(warp_field, dtype=cp.float32),
+    cp.asarray(block_stride, dtype=cp.float32),
+    cp.asarray(offset, dtype=cp.float32))
 
     tomove_corrected = cp.asnumpy(tomove_corrected_cp)
 
