@@ -168,9 +168,7 @@ def correct_deformation(
         tomove_image.astype(np.float32),
         warp_field.astype(np.float32),
         cp.asarray(block_stride, dtype=cp.float32),
-        cp.asarray(offset),
-        gpu_id=gpu_id,
-    )
+        cp.asarray(offset)  )
 
     tomove_corrected = cp.asnumpy(tomove_corrected_cp)
 
