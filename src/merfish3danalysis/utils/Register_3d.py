@@ -40,7 +40,7 @@ def save_overlay_png(reference, moved, out_path, z_slice=None):
     plt.figure(figsize=(6, 6))
     plt.imshow(overlay)
     plt.axis("off")
-    plt.title("Reference (Green) vs Corrected (Magenta)")
+    plt.title("Reference (red) vs Corrected (green)")
     plt.tight_layout()
     plt.savefig(out_path, dpi=300)
     plt.close()
