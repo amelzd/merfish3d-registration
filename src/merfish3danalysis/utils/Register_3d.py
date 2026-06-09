@@ -40,7 +40,7 @@ def save_overlay_png(reference, moved, out_path, z_slice=None):
     plt.figure(figsize=(6, 6))
     plt.imshow(overlay)
     plt.axis("off")
-    plt.title("Reference (red) vs Corrected (green)")
+    plt.title("Reference (red) vs Corrected (cyan)")
     plt.tight_layout()
     plt.savefig(out_path, dpi=300)
     plt.close()
@@ -58,6 +58,7 @@ def correct_deformation(
     Apply same deformation to:
         moving + tomove
     """
+    cp.cuda.Device(gpu_id).use()
 
     # Compute warp field
     moving_corrected, warp_field, block_size, block_stride = compute_warpfield(
@@ -67,13 +68,15 @@ def correct_deformation(
     )
 
     # Apply deformation to second channel
-    cp.cuda.Device(gpu_id).use()
+    block_size = cp.asarray(block_size, dtype=cp.float32)
+    block_stride = cp.asarray(block_stride, dtype=cp.float32)
+    offset = -(block_size / block_stride) / 2
 
     tomove_corrected_cp = warp_volume(
         tomove_image.astype(np.float32),
         warp_field.astype(np.float32),
         cp.asarray(block_stride, dtype=cp.float32),
-        cp.asarray(-block_size / block_stride / 2, dtype=cp.float32),
+        cp.asarray(offset),
         gpu_id=gpu_id,
     )
 
