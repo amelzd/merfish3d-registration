@@ -2,11 +2,49 @@ import gc
 import argparse
 import numpy as np
 import cupy as cp
+import matplotlib.pyplot as plt
 
 from warpfield.warp import warp_volume
 from merfish3danalysis.utils.registration import compute_warpfield
 
+def save_overlay_png(reference, moved, out_path, z_slice=None):
+    """
+    Save RGB overlay:
+        - R	reference
+        - G	moved
+        - B	moved
+    """
 
+    def get_slice(img):
+        if img.ndim == 3:
+            z = img.shape[0] // 2 if z_slice is None else z_slice
+            return img[z]
+        return img
+
+    ref = get_slice(reference).astype(np.float32)
+    mov = get_slice(moved).astype(np.float32)
+
+    # Normalize for visualization
+    def norm(x):
+        x = x - x.min()
+        return x / (x.max() + 1e-8)
+
+    ref = norm(ref)
+    mov = norm(mov)
+
+    overlay = np.zeros((*ref.shape, 3), dtype=np.float32)
+    overlay[..., 0] = ref
+    overlay[..., 1] = mov
+    overlay[..., 2] = mov
+
+    plt.figure(figsize=(6, 6))
+    plt.imshow(overlay)
+    plt.axis("off")
+    plt.title("Reference (Green) vs Corrected (Magenta)")
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=300)
+    plt.close()
+    
 def correct_deformation(
     reference_image: np.ndarray,
     moving_image: np.ndarray,
@@ -29,7 +67,6 @@ def correct_deformation(
     )
 
     # Apply deformation to second channel
-
     cp.cuda.Device(gpu_id).use()
 
     tomove_corrected_cp = warp_volume(
@@ -42,25 +79,18 @@ def correct_deformation(
 
     tomove_corrected = cp.asnumpy(tomove_corrected_cp)
 
-
+    # CuPy / GPU 
     del tomove_corrected_cp
     gc.collect()
-
     cp.cuda.Stream.null.synchronize()
     cp.get_default_memory_pool().free_all_blocks()
     cp.get_default_pinned_memory_pool().free_all_blocks()
 
-    return (
-        moving_corrected.astype(np.float32),
-        tomove_corrected.astype(np.float32),
-        warp_field,
-    )
+    return ( moving_corrected.astype(np.float32), tomove_corrected.astype(np.float32), warp_field)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Apply GPU deformation correction (warpfield optical flow)."
-    )
+    parser = argparse.ArgumentParser( description="Apply GPU deformation correction (warpfield optical flow).")
 
     parser.add_argument("--reference", required=True, help="Reference image (.npy)")
     parser.add_argument("--moving", required=True, help="Moving image (.npy)")
@@ -69,13 +99,16 @@ def main():
     parser.add_argument("--out_tomove", required=True, help="Output corrected tomove")
     parser.add_argument("--out_warp", required=True, help="Output warp field (.npy)")
     parser.add_argument("--gpu", type=int, default=0)
+    parser.add_argument("--out_overlay", required=True, help="Output overlay PNG")
 
     args = parser.parse_args()
 
+    # Load images
     reference = np.load(args.reference).astype(np.float32)
     moving = np.load(args.moving).astype(np.float32)
     tomove = np.load(args.tomove).astype(np.float32)
 
+    # Deformation correction
     moving_corr, tomove_corr, warp_field = correct_deformation(
         reference,
         moving,
@@ -83,10 +116,11 @@ def main():
         gpu_id=args.gpu,
     )
 
+    # Saving outputs
     np.save(args.out_moving, moving_corr)
     np.save(args.out_tomove, tomove_corr)
     np.save(args.out_warp, warp_field)
-
+    save_overlay_png(reference=reference, moved=moving_corr, out_path=args.out_overlay )
     print("Deformation correction complete.")
 
 
