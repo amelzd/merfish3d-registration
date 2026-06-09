@@ -7,11 +7,18 @@ import tifffile as tiff
 from numpy.typing import ArrayLike
 
 from warpfield.warp import warp_volume
-from merfish3danalysis.utils.registration import compute_warpfield
-
 import gc
 from collections.abc import Sequence
 
+
+'''
+#create environment without merfish install
+conda create -n warpfield python=3.11
+conda activate warpfield
+pip install cupy-cuda12x
+pip install warpfield
+conda install numpy matplotlib tifffile
+'''
 
 
 def compute_warpfield(
