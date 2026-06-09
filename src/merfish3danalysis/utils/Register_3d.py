@@ -20,7 +20,7 @@ def save_overlay_png(reference, moved, out_path, z_slice=None):
         if img.ndim == 3:
             z = img.shape[axis] // 2 if z_slice is None else z_slice
             return np.take(img, z, axis=axis)
-    return img
+        return img
 
     ref = get_slice(reference).astype(np.float32)
     mov = get_slice(moved).astype(np.float32)
