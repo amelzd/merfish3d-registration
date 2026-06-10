@@ -149,7 +149,8 @@ def correct_deformation(
     reference_image: np.ndarray,
     moving_image: np.ndarray,
     tomove_image: np.ndarray | None = None,
-    gpu_id: int = 0):
+    gpu_id: int = 0, shift_global):
+        
     """
     Estimate anisotropic deformation from:
         reference -> moving
@@ -160,7 +161,7 @@ def correct_deformation(
     cp.cuda.Device(gpu_id).use()
 
     # apply register global
-    shift_3d = np.array(args.shift_global)[[2,1,0]]
+    shift_3d = np.array(shift_global)[[2,1,0]]
     moving_image = shift_image(moving_image, shift_3d)
 
     # Compute warp field with gpu
@@ -175,7 +176,7 @@ def correct_deformation(
     block_stride = cp.asarray(block_stride, dtype=cp.float32)
     offset = -(block_size / block_stride) / 2
 
-    #### 3D correction applied (warpfield) 
+    #### 3D correction applied (warpfield) to CHANGE
     tomove_corrected = None
     if tomove_image is not None:
         tomove_corrected_cp = warp_volume(
@@ -226,13 +227,14 @@ def main():
     #binning
     moving = moving[:, ::2, ::2]
     reference = reference[:, ::2, ::2]
+    shift_global=args.shift_global
     
     # Deformation registration
     moving_corr, tomove_corr, warp_field = correct_deformation(
         reference,
         moving,
         tomove,
-        gpu_id=args.gpu,
+        gpu_id=args.gpu, shift_global
     )
 
     # Saving outputs
