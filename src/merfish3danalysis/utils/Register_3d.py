@@ -5,18 +5,17 @@ import cupy as cp
 import os
 import matplotlib.pyplot as plt
 import tifffile as tiff
+import time
+
 from skimage import exposure
 from numpy.typing import ArrayLike
 from scipy.ndimage import shift as shift_image
 from scipy.ndimage import zoom
-import time
 
 from photutils.background import MedianBackground
 from photutils.background import Background2D
 from astropy.stats import SigmaClip
 from tqdm import trange
-
-
 
 from warpfield.warp import warp_volume
 from collections.abc import Sequence
