@@ -149,7 +149,7 @@ def correct_deformation(
     reference_image: np.ndarray,
     moving_image: np.ndarray,
     tomove_image: np.ndarray | None = None,
-    shift_global,
+    shift_global | shift_global=[0,0,0],
     gpu_id: int = 0):
         
     """
