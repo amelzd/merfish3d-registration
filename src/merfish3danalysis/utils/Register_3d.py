@@ -234,8 +234,7 @@ def main():
         reference,
         moving,
         tomove,
-        gpu_id=args.gpu, shift_global
-    )
+        gpu_id=args.gpu, shift_global )
 
     # Saving outputs
     tiff.imwrite(args.out_moving, np.clip(moving_corr, np.iinfo(orig_dtype_mov).min, np.iinfo(orig_dtype_mov).max).astype(orig_dtype_mov) )
