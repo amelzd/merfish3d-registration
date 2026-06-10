@@ -178,16 +178,14 @@ def correct_deformation(
         
         tomove_corrected = cp.asnumpy(tomove_corrected_cp)
 
+        # CuPy / GPU 
         del tomove_corrected_cp
+        gc.collect()
+        cp.cuda.Stream.null.synchronize()
+        cp.get_default_memory_pool().free_all_blocks()
+        cp.get_default_pinned_memory_pool().free_all_blocks()
 
-    # CuPy / GPU 
-    del tomove_corrected_cp
-    gc.collect()
-    cp.cuda.Stream.null.synchronize()
-    cp.get_default_memory_pool().free_all_blocks()
-    cp.get_default_pinned_memory_pool().free_all_blocks()
-
-    return (moving_corrected.astype(np.float32), None if tomove_corrected is None else tomove_corrected.astype(np.float32),warp_field)
+    return (moving_corrected.astype(np.float32), None if tomove_image is None else tomove_corrected_cp.astype(np.float32),warp_field)
 
 
 def main():
@@ -205,13 +203,12 @@ def main():
     args = parser.parse_args()
 
     # Load images
-    if args.tomove is not None:
-        orig_dtype = tiff.imread(args.tomove).dtype
         
-    tomove = tiff.imread(args.tomove).astype(np.float32)
     reference = tiff.imread(args.reference).astype(np.float32)
     moving = tiff.imread(args.moving).astype(np.float32)
-    tomove = tiff.imread(args.tomove).astype(np.float32)
+    if args.tomove is not None:
+        orig_dtype = tiff.imread(args.tomove).dtype
+        tomove = tiff.imread(args.tomove).astype(np.float32)
     
     #binning
     moving = moving[:, ::2, ::2]
@@ -226,11 +223,12 @@ def main():
     )
 
     # Saving outputs
-    tiff.imwrite(args.out_moving, np.clip(tomove_corr, np.iinfo(orig_dtype).min, np.iinfo(orig_dtype).max).astype(orig_dtype))
+    tiff.imwrite(args.out_moving, np.clip(moving_corr, np.iinfo(orig_dtype).min, np.iinfo(orig_dtype).max).astype(orig_dtype))
     if tomove_corr is not None and args.out_tomove is not None:
         tiff.imwrite(args.out_tomove, np.clip(tomove_corr, np.iinfo(orig_dtype).min,  np.iinfo(orig_dtype).max,).astype(orig_dtype) )
     np.save(args.out_warp, warp_field)
     save_overlay_png(reference=reference, moved=moving_corr, out_path=args.out_overlay )
+    
     print("Deformation correction complete.")
 
 
