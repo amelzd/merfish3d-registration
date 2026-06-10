@@ -160,8 +160,7 @@ def correct_deformation(
     cp.cuda.Device(gpu_id).use()
 
     # apply register global
-    shift_3d = np.zeros((3))
-    shift_3d[0], shift_3d[1], shift_3d[2] = args.shifts[2], args.shifts[0], args.shifts[1]
+    shift_3d = np.array(args.shift_global)[[2,1,0]]
     moving_image = shift_image(moving_image, shift_3d)
 
     # Compute warp field with gpu
@@ -208,7 +207,7 @@ def main():
     parser.add_argument("--out_warp", required=True, help="Output warp field (.npy)")
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--out_overlay", required=True, help="Output overlay PNG")
-    parser.add_argument("--shift_global", default= 1 1 1, help="Shit x y z to apply beforehand")
+    parser.add_argument("--shift_global", nargs=3, type=float, default=[0,0,0])
 
     args = parser.parse_args()
 
