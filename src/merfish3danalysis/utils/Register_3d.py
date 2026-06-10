@@ -20,7 +20,7 @@ pip install warpfield
 python -m pip install matplotlib tifffile
 '''
 
-
+######### compute_warpfield()  from utils/registration.py ####################
 def compute_warpfield(
     img_ref: ArrayLike, img_trg: ArrayLike, gpu_id: int = 0
 ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
@@ -134,6 +134,7 @@ def save_overlay_png(reference, moved, out_path, z_slice=None):
     plt.tight_layout()
     plt.savefig(out_path, dpi=300, bbox_inches="tight", pad_inches=0)
     plt.close()
+
     
 def correct_deformation(
     reference_image: np.ndarray,
@@ -150,7 +151,7 @@ def correct_deformation(
     """
     cp.cuda.Device(gpu_id).use()
 
-    # Compute warp field
+    # Compute warp field with gpu
     moving_corrected, warp_field, block_size, block_stride = compute_warpfield(
         reference_image,
         moving_image,
@@ -166,7 +167,8 @@ def correct_deformation(
     print('warp_field:',type(warp_field))
     print(type('block_stride:',block_stride))
     print(type('offset:',offset))
-    
+
+    #### 3D correction applied (warpfield) 
     tomove_corrected_cp = warp_volume(
     cp.asarray(tomove_image, dtype=cp.float32),
     cp.asarray(warp_field, dtype=cp.float32),
@@ -200,12 +202,14 @@ def main():
     args = parser.parse_args()
 
     # Load images
+    orig_dtype = tiff.imread(args.tomove).dtype
     reference = tiff.imread(args.reference).astype(np.float32)
     moving = tiff.imread(args.moving).astype(np.float32)
     tomove = tiff.imread(args.tomove).astype(np.float32)
     moving = moving[:, ::2, ::2]
     reference = reference[:, ::2, ::2]
-    # Deformation correction
+    
+    # Deformation registration
     moving_corr, tomove_corr, warp_field = correct_deformation(
         reference,
         moving,
@@ -214,8 +218,8 @@ def main():
     )
 
     # Saving outputs
-    tiff.imwrite(args.out_moving, moving_corr.astype(np.float32))
-    tiff.imwrite(args.out_tomove, tomove_corr.astype(np.float32))
+    tiff.imwrite(args.out_tomove, np.clip(tomove_corr, np.iinfo(orig_dtype).min, np.iinfo(orig_dtype).max).astype(orig_dtype))
+    tiff.imwrite(args.out_tomove, np.clip(moving_corr, np.iinfo(orig_dtype).min, np.iinfo(orig_dtype).max).astype(orig_dtype))
     np.save(args.out_warp, warp_field)
     save_overlay_png(reference=reference, moved=moving_corr, out_path=args.out_overlay )
     print("Deformation correction complete.")
