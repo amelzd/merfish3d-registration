@@ -208,6 +208,8 @@ def main():
         
     reference = tiff.imread(args.reference).astype(np.float32)
     moving = tiff.imread(args.moving).astype(np.float32)
+    orig_dtype_mov = tiff.imread(args.moving).dtype
+    
     tomove_dtype = None
     tomove = None
     if args.tomove is not None:
@@ -227,7 +229,7 @@ def main():
     )
 
     # Saving outputs
-    tiff.imwrite(args.out_moving, np.clip(moving_corr, np.iinfo(orig_dtype).min, np.iinfo(orig_dtype).max).astype(orig_dtype))
+    tiff.imwrite(args.out_moving, np.clip(moving_corr, np.iinfo(orig_dtype_mov.min, np.iinfo(orig_dtype_move).max).astype(orig_dtype_mov))
     if tomove_corr is not None and args.out_tomove is not None:
         tiff.imwrite(args.out_tomove, np.clip(tomove_corr, np.iinfo(orig_dtype).min,  np.iinfo(orig_dtype).max,).astype(orig_dtype) )
     np.save(args.out_warp, warp_field)
