@@ -207,7 +207,6 @@ def save_overlay_png(reference, moved, out_path, z_slice=None, axis=0):
 def correct_deformation(
     reference_image: np.ndarray,
     moving_image: np.ndarray,
-    shift_global=[0,0,0],
     tomove_image: np.ndarray | None = None,
     gpu_id: int = 0):
         
@@ -364,7 +363,6 @@ def main():
     moving_corr, tomove_corr, warp_field = correct_deformation(
         reference,
         moving,
-        shift_global,
         tomove,
         gpu_id=args.gpu )
     
