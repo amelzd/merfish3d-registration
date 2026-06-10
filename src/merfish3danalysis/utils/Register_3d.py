@@ -214,7 +214,7 @@ def main():
     args = parser.parse_args()
 
     # Load images
-        
+    print("Reading images.")    
     reference = tiff.imread(args.reference).astype(np.float32)
     moving = tiff.imread(args.moving).astype(np.float32)
     orig_dtype_mov = tiff.imread(args.moving).dtype
@@ -226,12 +226,13 @@ def main():
         tomove = tiff.imread(args.tomove).astype(np.float32)
     
     #binning
-    '''
+
     moving = moving[:, ::2, ::2]
     reference = reference[:, ::2, ::2]
-    '''
+    
     shift_global=args.shift_global
     
+    print("Correcting deformations.")
     # Deformation registration
     moving_corr, tomove_corr, warp_field = correct_deformation(
         reference,
@@ -239,7 +240,8 @@ def main():
         shift_global,
         tomove,
         gpu_id=args.gpu )
-
+    
+    print(f"Saving images in: {args.out_moving}")
     # Saving outputs
     tiff.imwrite(args.out_moving, np.clip(moving_corr, np.iinfo(orig_dtype_mov).min, np.iinfo(orig_dtype_mov).max).astype(orig_dtype_mov) )
     if tomove_corr is not None and args.out_tomove is not None:
