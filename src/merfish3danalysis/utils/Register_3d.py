@@ -8,7 +8,6 @@ from numpy.typing import ArrayLike
 from scipy.ndimage import shift as shift_image
 
 from warpfield.warp import warp_volume
-import gc
 from collections.abc import Sequence
 
 
@@ -149,7 +148,7 @@ def correct_deformation(
     reference_image: np.ndarray,
     moving_image: np.ndarray,
     tomove_image: np.ndarray | None = None,
-    shift_global | shift_global=[0,0,0],
+    shift_global=[0,0,0],
     gpu_id: int = 0):
         
     """
@@ -227,8 +226,10 @@ def main():
         tomove = tiff.imread(args.tomove).astype(np.float32)
     
     #binning
+    '''
     moving = moving[:, ::2, ::2]
     reference = reference[:, ::2, ::2]
+    '''
     shift_global=args.shift_global
     
     # Deformation registration
@@ -236,7 +237,7 @@ def main():
         reference,
         moving,
         tomove,
-        shift_global
+        shift_global,
         gpu_id=args.gpu )
 
     # Saving outputs
