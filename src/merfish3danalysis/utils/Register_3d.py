@@ -171,6 +171,7 @@ def correct_deformation(
 '''
 
     #### 3D correction applied (warpfield) 
+    tomove_corrected = None
     if tomove_image is not None:
         tomove_corrected_cp = warp_volume(
             cp.asarray(tomove_image, dtype=cp.float32),
