@@ -220,10 +220,13 @@ def correct_deformation(
     cp.cuda.Device(gpu_id).use()
 
     # apply register global
+    fixed_image_np, moving_image_np = preprocess_images(fixed_image_np_0, moving_image_np_0, args)
+        
     shift_global = np.asarray(shift_global, dtype=np.float32)
     shift_3d = shift_global[[2, 1, 0]]
     moving_image = shift_image(moving_image, shift_3d)
-
+        
+    fixed_image_np, moving_image_np = preprocess_images(fixed_image_np_0, moving_image_np_0, args) 
     # Compute warp field with gpu
     moving_corrected, warp_field, block_size, block_stride = compute_warpfield(
         reference_image,
@@ -318,6 +321,30 @@ def plot_4_images(allimages, titles=None):
 
     return fig
 
+
+####
+def preprocess_images(reference, moving, args):
+    
+    print(f"$ Shifting image using: {args.shift_global}")
+    shift_3d = np.zeros((3))
+    shift_3d[0], shift_3d[1], shift_3d[2] = args.shift_global[2], args.shift_global[0], args.shift_global[1]
+    
+    moving = shift_image(moving, shift_3d)
+
+    # Apply binning if necessary
+    if args.bin > 1:
+        print(f"$ Applying binning to images: binning={args.bin}")
+        scale = 1.0 / args.bin
+        moving = zoom(moving, (1, scale, scale), order=1)
+        reference = zoom(reference, (1, scale, scale), order=1)
+        
+
+    print(f"$ Preprocessing images with z_binning={args.z_binning}, lower_threshold={args.lower_threshold}, higher_threshold={args.higher_threshold}")
+    reference = preprocess_3d_image(reference, args.lower_threshold, args.higher_threshold)
+    moving = preprocess_3d_image(moving, args.lower_threshold, args.higher_threshold)
+    
+    return fixed_image_np, moving_image_np
+
 def main():
     parser = argparse.ArgumentParser( description="Apply GPU deformation correction (warpfield optical flow).")
 
@@ -328,6 +355,8 @@ def main():
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--bin", type=int, default=2)
     parser.add_argument("--shift_global", nargs=3, type=float, default=[0,0,0])
+    parser.add_argument('--lower_threshold', type=float, default=0.9, help='Lower threshold for intensity adjustment in preprocessing.')
+    parser.add_argument('--higher_threshold', type=float, default=0.9999999, help='Higher threshold for intensity adjustment in preprocessing.')
 
     args = parser.parse_args()
 
@@ -336,19 +365,21 @@ def main():
     reference = tiff.imread(args.reference).astype(np.float32)
     moving = tiff.imread(args.moving).astype(np.float32)
     orig_dtype_mov = tiff.imread(args.moving).dtype
-    
+
     tomove_dtype = None
     tomove = None
     if args.tomove is not None:
         orig_dtype = tiff.imread(args.tomove).dtype
         tomove = tiff.imread(args.tomove).astype(np.float32)
+
+    #
     
     #binning
     '''
     if args.bin > 1:
         moving = moving[:, ::args.bin, ::args.bin]
         reference = reference[:, ::args.bin, ::args.bin]
-    '''
+
 
     if args.bin > 1:
         scale = 1.0 / args.bin
@@ -356,7 +387,7 @@ def main():
         reference = zoom(reference, (1, scale, scale), order=1)
     
     shift_global=args.shift_global
-    
+'''
     print("Correcting deformations.")
     # Deformation registration
     moving_corr, tomove_corr, warp_field = correct_deformation(
