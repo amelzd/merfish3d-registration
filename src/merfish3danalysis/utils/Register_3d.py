@@ -309,7 +309,7 @@ def preprocess_images(reference, moving, args):
         reference = zoom(reference, (1, scale, scale), order=1)
         
 
-    print(f"$ Preprocessing images with z_binning={args.z_binning}, lower_threshold={args.lower_threshold}, higher_threshold={args.higher_threshold}")
+    print(f"$ Preprocessing images with z_binning={args.bin}, lower_threshold={args.lower_threshold}, higher_threshold={args.higher_threshold}")
     reference = preprocess_3d_image(reference, args.lower_threshold, args.higher_threshold)
     moving = preprocess_3d_image(moving, args.lower_threshold, args.higher_threshold)
     
