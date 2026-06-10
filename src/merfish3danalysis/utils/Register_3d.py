@@ -323,7 +323,7 @@ def main():
     overlay.save(args.output)
 
     overlay = BothImgRbgFile(reference.max(axis=0), moving_corr.max(axis=0), tag='reference_aligned')
-    overlay.save((os.path.join(args.output,args.moving, "overlay.png"))
+    overlay.save(os.path.join(args.output,args.moving, "overlay.png"))
     #save_overlay_png(reference=reference, moved=moving_corr, out_path=args.out_overlay )
     
     print("Deformation correction complete.")
