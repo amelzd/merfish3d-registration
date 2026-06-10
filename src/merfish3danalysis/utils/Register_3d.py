@@ -101,10 +101,10 @@ def compute_warpfield(
 
 def save_overlay_png(reference, moved, out_path, z_slice=None):
     """
-    Save RGB overlay:
-        - R	reference
-        - G	moved
-        - B	moved
+    Save red/green overlay:
+        - Red   = reference
+        - Green = moved
+        - Yellow = overlap
     """
 
     def get_slice(img, z_slice=None, axis=0):
@@ -113,28 +113,26 @@ def save_overlay_png(reference, moved, out_path, z_slice=None):
             return np.take(img, z, axis=axis)
         return img
 
-    ref = get_slice(reference).astype(np.float32)
-    mov = get_slice(moved).astype(np.float32)
+    ref = get_slice(reference, z_slice).astype(np.float32)
+    mov = get_slice(moved, z_slice).astype(np.float32)
 
-    # Normalize for visualization
     def norm(x):
         x = x - x.min()
-        return x / (x.max() + 1e-8)
+        return x / (x.max() - x.min() + 1e-8)
 
     ref = norm(ref)
     mov = norm(mov)
 
     overlay = np.zeros((*ref.shape, 3), dtype=np.float32)
-    overlay[..., 0] = ref
-    overlay[..., 1] = mov
-    overlay[..., 2] = mov
+    overlay[..., 0] = ref  # Red
+    overlay[..., 1] = mov  # Green
 
     plt.figure(figsize=(6, 6))
     plt.imshow(overlay)
     plt.axis("off")
-    plt.title("Reference (red) vs Corrected (cyan)")
+    plt.title("Reference (red) vs Moved (green)")
     plt.tight_layout()
-    plt.savefig(out_path, dpi=300)
+    plt.savefig(out_path, dpi=300, bbox_inches="tight", pad_inches=0)
     plt.close()
     
 def correct_deformation(
