@@ -139,7 +139,7 @@ def save_overlay_png(reference, moved, out_path, z_slice=None):
 def correct_deformation(
     reference_image: np.ndarray,
     moving_image: np.ndarray,
-    tomove_image: np.ndarray,
+    tomove_image: np.ndarray | None = None,
     gpu_id: int = 0,
 ):
     """
@@ -169,13 +169,16 @@ def correct_deformation(
     print('offset:',type(offset))
 
     #### 3D correction applied (warpfield) 
-    tomove_corrected_cp = warp_volume(
-    cp.asarray(tomove_image, dtype=cp.float32),
-    cp.asarray(warp_field, dtype=cp.float32),
-    cp.asarray(block_stride, dtype=cp.float32),
-    cp.asarray(offset, dtype=cp.float32))
+    if tomove_image is not None:
+        tomove_corrected_cp = warp_volume(
+            cp.asarray(tomove_image, dtype=cp.float32),
+            cp.asarray(warp_field, dtype=cp.float32),
+            cp.asarray(block_stride, dtype=cp.float32),
+            cp.asarray(offset, dtype=cp.float32))
+        
+        tomove_corrected = cp.asnumpy(tomove_corrected_cp)
 
-    tomove_corrected = cp.asnumpy(tomove_corrected_cp)
+        del tomove_corrected_cp
 
     # CuPy / GPU 
     del tomove_corrected_cp
@@ -184,7 +187,7 @@ def correct_deformation(
     cp.get_default_memory_pool().free_all_blocks()
     cp.get_default_pinned_memory_pool().free_all_blocks()
 
-    return ( moving_corrected.astype(np.float32), tomove_corrected.astype(np.float32), warp_field)
+    return (moving_corrected.astype(np.float32), None if tomove_corrected is None else tomove_corrected.astype(np.float32),warp_field)
 
 
 def main():
@@ -202,10 +205,15 @@ def main():
     args = parser.parse_args()
 
     # Load images
-    orig_dtype = tiff.imread(args.tomove).dtype
+    if args.tomove is not None:
+        orig_dtype = tiff.imread(args.tomove).dtype
+        
+    tomove = tiff.imread(args.tomove).astype(np.float32)
     reference = tiff.imread(args.reference).astype(np.float32)
     moving = tiff.imread(args.moving).astype(np.float32)
     tomove = tiff.imread(args.tomove).astype(np.float32)
+    
+    #binning
     moving = moving[:, ::2, ::2]
     reference = reference[:, ::2, ::2]
     
@@ -219,7 +227,8 @@ def main():
 
     # Saving outputs
     tiff.imwrite(args.out_moving, np.clip(tomove_corr, np.iinfo(orig_dtype).min, np.iinfo(orig_dtype).max).astype(orig_dtype))
-    tiff.imwrite(args.out_tomove, np.clip(moving_corr, np.iinfo(orig_dtype).min, np.iinfo(orig_dtype).max).astype(orig_dtype))
+    if tomove_corr is not None and args.out_tomove is not None:
+        tiff.imwrite(args.out_tomove, np.clip(tomove_corr, np.iinfo(orig_dtype).min,  np.iinfo(orig_dtype).max,).astype(orig_dtype) )
     np.save(args.out_warp, warp_field)
     save_overlay_png(reference=reference, moved=moving_corr, out_path=args.out_overlay )
     print("Deformation correction complete.")
