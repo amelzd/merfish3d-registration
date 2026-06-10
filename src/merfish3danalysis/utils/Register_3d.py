@@ -9,6 +9,14 @@ from skimage import exposure
 from numpy.typing import ArrayLike
 from scipy.ndimage import shift as shift_image
 from scipy.ndimage import zoom
+import time
+
+from photutils.background import MedianBackground
+from photutils.background import Background2D
+from astropy.stats import SigmaClip
+from tqdm import trange
+
+
 
 from warpfield.warp import warp_volume
 from collections.abc import Sequence
@@ -22,6 +30,55 @@ conda install -c conda-forge cupy cuda-version=12
 pip install warpfield
 python -m pip install matplotlib tifffile
 '''
+## pre process image #########################################################
+def _remove_inhomogeneous_background(im, box_size=(32, 32), filter_size=(3, 3), parallel_execution=True, background=False):
+    if len(im.shape) == 2:
+        return _remove_inhomogeneous_background_2d(im, filter_size=filter_size, background=background)
+    elif len(im.shape) == 3:
+        return _remove_inhomogeneous_background_3d(im, box_size=box_size, filter_size=filter_size, parallel_execution=parallel_execution, background=background)
+    else:
+        return None
+
+def _remove_inhomogeneous_background_2d(im, filter_size=(3, 3), background=False):
+    print("Removing inhomogeneous background from 2D image...")
+    sigma_clip = SigmaClip(sigma=3)
+    bkg_estimator = MedianBackground()
+    bkg = Background2D(im, (64, 64), filter_size=filter_size, sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
+    im1_bkg_substracted = im - bkg.background
+    return (im1_bkg_substracted, bkg) if background else im1_bkg_substracted
+
+def _remove_inhomogeneous_background_3d(image_3d, box_size=(64, 64), filter_size=(3, 3), parallel_execution=True, background=False):
+    number_planes = image_3d.shape[0]
+    output = np.zeros(image_3d.shape)
+    sigma_clip = SigmaClip(sigma=3)
+    bkg_estimator = MedianBackground()
+    print(f"> Removing inhomogeneous background from {number_planes} planes using 1 worker...")
+    z_range = trange(number_planes)
+    for z in z_range:
+        image_2d = image_3d[z, :, :]
+        bkg = Background2D(image_2d, box_size, filter_size=filter_size, sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
+        output[z, :, :] = image_2d - bkg.background
+    return (output, bkg.background) if background else output
+
+def image_adjust(image, lower_threshold=0.3, higher_threshold=0.9999):
+    image1 = exposure.rescale_intensity(image, out_range=(0, 1))
+    hist1_before = exposure.histogram(image1)
+    hist_sum = np.zeros(len(hist1_before[0]))
+    for i in range(len(hist1_before[0]) - 1):
+        hist_sum[i + 1] = hist_sum[i] + hist1_before[0][i]
+    sum_normalized = hist_sum / hist_sum.max()
+    lower_cutoff = np.where(sum_normalized > lower_threshold)[0][0] / 255
+    higher_cutoff = np.where(sum_normalized > higher_threshold)[0][0] / 255
+    image1 = exposure.rescale_intensity(image1, in_range=(lower_cutoff, higher_cutoff), out_range=(0, 1))
+    hist1 = exposure.histogram(image1)
+    return image1, hist1_before, hist1, lower_cutoff, higher_cutoff
+
+def preprocess_3d_image(x, lower_threshold, higher_threshold, parallel_execution=True):
+    image = exposure.rescale_intensity(x, out_range=(0, 1))
+    image = _remove_inhomogeneous_background(image, parallel_execution=parallel_execution)
+    image = image_adjust(image, lower_threshold, higher_threshold)[0]
+    return image
+
 
 ######### compute_warpfield()  from utils/registration.py ####################
 def compute_warpfield(
