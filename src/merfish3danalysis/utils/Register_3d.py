@@ -140,8 +140,7 @@ def correct_deformation(
     reference_image: np.ndarray,
     moving_image: np.ndarray,
     tomove_image: np.ndarray | None = None,
-    gpu_id: int = 0,
-):
+    gpu_id: int = 0):
     """
     Estimate anisotropic deformation from:
         reference -> moving
@@ -162,13 +161,6 @@ def correct_deformation(
     block_size = cp.asarray(block_size, dtype=cp.float32)
     block_stride = cp.asarray(block_stride, dtype=cp.float32)
     offset = -(block_size / block_stride) / 2
-    
-'''
-    print('tomove:',type(tomove_image))
-    print('warp_field:',type(warp_field))
-    print('block_stride:',type(block_stride))
-    print('offset:',type(offset))
-'''
 
     #### 3D correction applied (warpfield) 
     tomove_corrected = None
@@ -180,13 +172,13 @@ def correct_deformation(
             cp.asarray(offset, dtype=cp.float32))
         
         tomove_corrected = cp.asnumpy(tomove_corrected_cp)
-
+        
         # CuPy / GPU 
         del tomove_corrected_cp
-        gc.collect()
-        cp.cuda.Stream.null.synchronize()
-        cp.get_default_memory_pool().free_all_blocks()
-        cp.get_default_pinned_memory_pool().free_all_blocks()
+    gc.collect()
+    cp.cuda.Stream.null.synchronize()
+    cp.get_default_memory_pool().free_all_blocks()
+    cp.get_default_pinned_memory_pool().free_all_blocks()
 
     return (moving_corrected.astype(np.float32), None if tomove_image is None else tomove_corrected.astype(np.float32),warp_field)
 
