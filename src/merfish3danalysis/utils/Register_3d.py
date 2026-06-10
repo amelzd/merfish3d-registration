@@ -208,11 +208,11 @@ def main():
         
     reference = tiff.imread(args.reference).astype(np.float32)
     moving = tiff.imread(args.moving).astype(np.float32)
+
+    tomove = None
     if args.tomove is not None:
         orig_dtype = tiff.imread(args.tomove).dtype
         tomove = tiff.imread(args.tomove).astype(np.float32)
-    elif :
-        tomove=None
     
     #binning
     moving = moving[:, ::2, ::2]
