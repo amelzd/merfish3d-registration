@@ -157,7 +157,8 @@ def compute_warpfield(
     cp.get_default_pinned_memory_pool().free_all_blocks()
 
     return (warped_image, warp_field, block_size, block_stride)
-
+    
+'''
 def save_overlay_png(reference, moved, out_path, z_slice=None, axis=0):
     """
     Save red/green overlay for 3D microscopy:
@@ -201,7 +202,7 @@ def save_overlay_png(reference, moved, out_path, z_slice=None, axis=0):
     plt.tight_layout()
     plt.savefig(out_path, dpi=300, bbox_inches="tight", pad_inches=0)
     plt.close()
-
+'''
     
 def correct_deformation(
     reference_image: np.ndarray,
@@ -218,15 +219,7 @@ def correct_deformation(
         moving + tomove
     """
     cp.cuda.Device(gpu_id).use()
-
-    # apply register global
-    fixed_image_np, moving_image_np = preprocess_images(fixed_image_np_0, moving_image_np_0, args)
         
-    shift_global = np.asarray(shift_global, dtype=np.float32)
-    shift_3d = shift_global[[2, 1, 0]]
-    moving_image = shift_image(moving_image, shift_3d)
-        
-    fixed_image_np, moving_image_np = preprocess_images(fixed_image_np_0, moving_image_np_0, args) 
     # Compute warp field with gpu
     moving_corrected, warp_field, block_size, block_stride = compute_warpfield(
         reference_image,
@@ -258,8 +251,6 @@ def correct_deformation(
     cp.get_default_pinned_memory_pool().free_all_blocks()
 
     return (moving_corrected.astype(np.float32), None if tomove_image is None else tomove_corrected.astype(np.float32),warp_field)
-
-
 
 #####register3D deeds overlay 
 class BothImgRbgFile:
@@ -299,27 +290,6 @@ class BothImgRbgFile:
         # Save the figure
         fig.savefig(self.path_name)
         plt.close(fig)
-
-
-def plot_4_images(allimages, titles=None):
-    if titles is None:
-        titles = [
-            "reference",
-            "cycle <i>",
-            "processed reference",
-            "processed cycle <i>",
-        ]
-
-    fig, axes = plt.subplots(2, 2)
-    fig.set_size_inches((10, 10))
-    ax = axes.ravel()
-
-    for axis, img, title in zip(ax, allimages, titles):
-        axis.imshow(img, cmap="Greys")
-        axis.set_title(title)
-    fig.tight_layout()
-
-    return fig
 
 
 ####
@@ -372,7 +342,8 @@ def main():
         orig_dtype = tiff.imread(args.tomove).dtype
         tomove = tiff.imread(args.tomove).astype(np.float32)
 
-    #
+    #preprocessing images
+    reference, moving = preprocess_images(reference, moving, args)
     
     #binning
     '''
