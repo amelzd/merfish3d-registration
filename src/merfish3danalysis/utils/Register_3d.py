@@ -5,7 +5,7 @@ import cupy as cp
 import os
 import matplotlib.pyplot as plt
 import tifffile as tiff
-
+from skimage import exposure
 from numpy.typing import ArrayLike
 from scipy.ndimage import shift as shift_image
 from scipy.ndimage import zoom
