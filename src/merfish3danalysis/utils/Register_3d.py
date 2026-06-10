@@ -99,52 +99,64 @@ def compute_warpfield(
 
     return (warped_image, warp_field, block_size, block_stride)
 
-def save_overlay_png(reference, moved, out_path, z_slice=None):
+def save_overlay_png(reference, moved, out_path, z_slice=None, axis=0, use_percentile=True):
     """
-    Save red/green overlay:
+    Save red/green overlay for 3D microscopy:
         - Red   = reference
         - Green = moved
         - Yellow = overlap
     """
 
-    def get_slice(img, z_slice=None, axis=0):
-        if img.ndim == 3:
-            z = img.shape[axis] // 2 if z_slice is None else z_slice
-            return np.take(img, z, axis=axis)
-        return img
+    def get_slice(img):
+        if img.ndim != 3:
+            return img.astype(np.float32)
 
-    ref = get_slice(reference, z_slice).astype(np.float32)
-    mov = get_slice(moved, z_slice).astype(np.float32)
+        z = img.shape[axis] // 2 if z_slice is None else z_slice
+        return np.take(img, z, axis=axis).astype(np.float32)
 
-    def norm_minmax(a, vmin, vmax):
-        return (a - vmin) / (vmax - vmin + 1e-8)
+    ref = get_slice(reference)
+    mov = get_slice(moved)
+
+    # --- robust global normalization (better than slice-based percentiles) ---
+    def normalize(a, vmin, vmax):
+        denom = vmax - vmin
+        if denom < 1e-8:
+            return np.zeros_like(a, dtype=np.float32)
+        return (a - vmin) / denom
 
     if use_percentile:
-        # robust to outliers / hot pixels (recommended for microscopy)
-        vmin = min(np.percentile(ref, 1), np.percentile(mov, 1))
-        vmax = max(np.percentile(ref, 99), np.percentile(mov, 99))
+        # compute from BOTH volumes (more stable than per-slice stats)
+        vmin = min(
+            np.percentile(ref, 1),
+            np.percentile(mov, 1)
+        )
+        vmax = max(
+            np.percentile(ref, 99),
+            np.percentile(mov, 99)
+        )
     else:
         vmin = min(ref.min(), mov.min())
         vmax = max(ref.max(), mov.max())
 
-    ref = norm_minmax(ref, vmin, vmax)
-    mov = norm_minmax(mov, vmin, vmax)
+    ref = normalize(ref, vmin, vmax)
+    mov = normalize(mov, vmin, vmax)
 
-    # clip for safety
+    # clamp for safety
     ref = np.clip(ref, 0, 1)
     mov = np.clip(mov, 0, 1)
 
     # --- RGB overlay ---
     overlay = np.zeros((*ref.shape, 3), dtype=np.float32)
-    overlay[..., 0] = ref   # Red channel
-    overlay[..., 1] = mov   # Green channel
+    overlay[..., 0] = ref  # Red
+    overlay[..., 1] = mov  # Green
 
-    # optional mild gamma correction for microscopy visibility
+    # mild gamma correction (helps fluorescence visibility)
     gamma = 0.9
     overlay = np.power(overlay, gamma)
 
+    # --- save ---
     plt.figure(figsize=(6, 6))
-    plt.imshow(overlay)
+    plt.imshow(overlay, interpolation="nearest")
     plt.axis("off")
     plt.title("Reference (red) vs Moved (green)")
     plt.tight_layout()
