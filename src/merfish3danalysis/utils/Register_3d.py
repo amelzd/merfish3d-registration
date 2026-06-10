@@ -208,7 +208,7 @@ def main():
         
     reference = tiff.imread(args.reference).astype(np.float32)
     moving = tiff.imread(args.moving).astype(np.float32)
-
+    tomove_dtype = None
     tomove = None
     if args.tomove is not None:
         orig_dtype = tiff.imread(args.tomove).dtype
