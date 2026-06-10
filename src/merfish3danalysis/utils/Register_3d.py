@@ -218,7 +218,7 @@ def main():
     )
 
     # Saving outputs
-    tiff.imwrite(args.out_tomove, np.clip(tomove_corr, np.iinfo(orig_dtype).min, np.iinfo(orig_dtype).max).astype(orig_dtype))
+    tiff.imwrite(args.out_moving, np.clip(tomove_corr, np.iinfo(orig_dtype).min, np.iinfo(orig_dtype).max).astype(orig_dtype))
     tiff.imwrite(args.out_tomove, np.clip(moving_corr, np.iinfo(orig_dtype).min, np.iinfo(orig_dtype).max).astype(orig_dtype))
     np.save(args.out_warp, warp_field)
     save_overlay_png(reference=reference, moved=moving_corr, out_path=args.out_overlay )
