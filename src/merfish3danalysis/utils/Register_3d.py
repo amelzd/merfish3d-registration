@@ -99,7 +99,7 @@ def compute_warpfield(
 
     return (warped_image, warp_field, block_size, block_stride)
 
-def save_overlay_png(reference, moved, out_path, z_slice=None, axis=0, use_percentile=True):
+def save_overlay_png(reference, moved, out_path, z_slice=None, axis=0):
     """
     Save red/green overlay for 3D microscopy:
         - Red   = reference
@@ -124,19 +124,8 @@ def save_overlay_png(reference, moved, out_path, z_slice=None, axis=0, use_perce
             return np.zeros_like(a, dtype=np.float32)
         return (a - vmin) / denom
 
-    if use_percentile:
-        # compute from BOTH volumes (more stable than per-slice stats)
-        vmin = min(
-            np.percentile(ref, 1),
-            np.percentile(mov, 1)
-        )
-        vmax = max(
-            np.percentile(ref, 99),
-            np.percentile(mov, 99)
-        )
-    else:
-        vmin = min(ref.min(), mov.min())
-        vmax = max(ref.max(), mov.max())
+    vmin = min(ref.min(), mov.min())
+    vmax = max(ref.max(), mov.max())
 
     ref = normalize(ref, vmin, vmax)
     mov = normalize(mov, vmin, vmax)
