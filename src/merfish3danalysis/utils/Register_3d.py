@@ -116,16 +116,32 @@ def save_overlay_png(reference, moved, out_path, z_slice=None):
     ref = get_slice(reference, z_slice).astype(np.float32)
     mov = get_slice(moved, z_slice).astype(np.float32)
 
-    def norm(x):
-        x = x - x.min()
-        return x / (x.max() - x.min() + 1e-8)
+    def norm_minmax(a, vmin, vmax):
+        return (a - vmin) / (vmax - vmin + 1e-8)
 
-    ref = norm(ref)
-    mov = norm(mov)
+    if use_percentile:
+        # robust to outliers / hot pixels (recommended for microscopy)
+        vmin = min(np.percentile(ref, 1), np.percentile(mov, 1))
+        vmax = max(np.percentile(ref, 99), np.percentile(mov, 99))
+    else:
+        vmin = min(ref.min(), mov.min())
+        vmax = max(ref.max(), mov.max())
 
+    ref = norm_minmax(ref, vmin, vmax)
+    mov = norm_minmax(mov, vmin, vmax)
+
+    # clip for safety
+    ref = np.clip(ref, 0, 1)
+    mov = np.clip(mov, 0, 1)
+
+    # --- RGB overlay ---
     overlay = np.zeros((*ref.shape, 3), dtype=np.float32)
-    overlay[..., 0] = ref  # Red
-    overlay[..., 1] = mov  # Green
+    overlay[..., 0] = ref   # Red channel
+    overlay[..., 1] = mov   # Green channel
+
+    # optional mild gamma correction for microscopy visibility
+    gamma = 0.9
+    overlay = np.power(overlay, gamma)
 
     plt.figure(figsize=(6, 6))
     plt.imshow(overlay)
