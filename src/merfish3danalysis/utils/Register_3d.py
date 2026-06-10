@@ -117,7 +117,7 @@ def save_overlay_png(reference, moved, out_path, z_slice=None, axis=0, use_perce
     ref = get_slice(reference)
     mov = get_slice(moved)
 
-    # --- robust global normalization (better than slice-based percentiles) ---
+    # normalization 
     def normalize(a, vmin, vmax):
         denom = vmax - vmin
         if denom < 1e-8:
@@ -141,20 +141,11 @@ def save_overlay_png(reference, moved, out_path, z_slice=None, axis=0, use_perce
     ref = normalize(ref, vmin, vmax)
     mov = normalize(mov, vmin, vmax)
 
-    # clamp for safety
-    ref = np.clip(ref, 0, 1)
-    mov = np.clip(mov, 0, 1)
-
-    # --- RGB overlay ---
+    #  RGB overlay
     overlay = np.zeros((*ref.shape, 3), dtype=np.float32)
     overlay[..., 0] = ref  # Red
     overlay[..., 1] = mov  # Green
-
-    # mild gamma correction (helps fluorescence visibility)
-    gamma = 0.9
-    overlay = np.power(overlay, gamma)
-
-    # --- save ---
+    
     plt.figure(figsize=(6, 6))
     plt.imshow(overlay, interpolation="nearest")
     plt.axis("off")
