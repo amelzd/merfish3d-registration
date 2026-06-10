@@ -319,11 +319,12 @@ def main():
     np.save(os.path.join(args.output, "warp_field.npy"), warp_field)
 
     # rgb overlay marcelo
+    # usage :overlay = BothImgRbgFile(fixed_image_np.max(axis=0), moving_image_np.max(axis=0), tag='reference_original')
     overlay = BothImgRbgFile(reference.max(axis=0), moving.max(axis=0), tag='reference_original')
-    overlay.save(args.output)
+    overlay.save(os.path.join(args.output,args.moving))
 
     overlay = BothImgRbgFile(reference.max(axis=0), moving_corr.max(axis=0), tag='reference_aligned')
-    overlay.save(os.path.join(args.output,args.moving, "overlay.png"))
+    overlay.save(os.path.join(args.output,args.moving))
     #save_overlay_png(reference=reference, moved=moving_corr, out_path=args.out_overlay )
     
     print("Deformation correction complete.")
