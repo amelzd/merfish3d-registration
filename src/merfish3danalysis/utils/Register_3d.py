@@ -313,7 +313,7 @@ def preprocess_images(reference, moving, args):
     reference = preprocess_3d_image(reference, args.lower_threshold, args.higher_threshold)
     moving = preprocess_3d_image(moving, args.lower_threshold, args.higher_threshold)
     
-    return fixed_image_np, moving_image_np
+    return reference, moving
 
 def main():
     parser = argparse.ArgumentParser( description="Apply GPU deformation correction (warpfield optical flow).")
