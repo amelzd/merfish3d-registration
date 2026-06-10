@@ -205,12 +205,9 @@ def main():
     parser.add_argument("--reference", required=True, help="Reference image ")
     parser.add_argument("--moving", required=True, help="Moving image ")
     parser.add_argument("--tomove", default = None, help="Image to apply same correction")
-    parser.add_argument("--out_moving", required=True, help="Output corrected moving")
-    parser.add_argument("--out_tomove", default= None, help="Output corrected tomove")
-    parser.add_argument("--out_warp", required=True, help="Output warp field (.npy)")
+    parser.add_argument("--output", required=True, help="Output path")
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--bin", type=int, default=2)
-    parser.add_argument("--out_overlay", required=True, help="Output overlay PNG")
     parser.add_argument("--shift_global", nargs=3, type=float, default=[0,0,0])
 
     args = parser.parse_args()
@@ -250,13 +247,20 @@ def main():
         tomove,
         gpu_id=args.gpu )
     
-    print(f"Saving images in: {args.out_moving}")
+    print(f"Saving images in: {args.output}")
     # Saving outputs
-    tiff.imwrite(args.out_moving, np.clip(moving_corr, np.iinfo(orig_dtype_mov).min, np.iinfo(orig_dtype_mov).max).astype(orig_dtype_mov) )
-    if tomove_corr is not None and args.out_tomove is not None:
-        tiff.imwrite(args.out_tomove, np.clip(tomove_corr, np.iinfo(orig_dtype).min,  np.iinfo(orig_dtype).max,).astype(orig_dtype) )
-    np.save(args.out_warp, warp_field)
-    save_overlay_png(reference=reference, moved=moving_corr, out_path=args.out_overlay )
+    tiff.imwrite(args.output +  os.path.basename(args.moving), np.clip(moving_corr, np.iinfo(orig_dtype_mov).min, np.iinfo(orig_dtype_mov).max).astype(orig_dtype_mov) )
+    if tomove_corr is not None and args.tomove is not None:
+        tiff.imwrite(args.output +  os.path.basename(args.tomove), np.clip(tomove_corr, np.iinfo(orig_dtype).min,  np.iinfo(orig_dtype).max,).astype(orig_dtype) )
+    np.save(args.output, warp_field)
+
+    # rgb overlay marcelo
+    overlay = BothImgRbgFile(reference.max(axis=0), moving.max(axis=0), tag='reference_original')
+    overlay.save( os.path.basename(args.output))
+
+    overlay = BothImgRbgFile(reference.max(axis=0), moving_corr.max(axis=0), tag='reference_aligned')
+    overlay.save(os.path.basename(args.output))
+    #save_overlay_png(reference=reference, moved=moving_corr, out_path=args.out_overlay )
     
     print("Deformation correction complete.")
 
