@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import tifffile as tiff
 from numpy.typing import ArrayLike
 from scipy.ndimage import shift as shift_image
+from scipy.ndimage import zoom
 
 from warpfield.warp import warp_volume
 from collections.abc import Sequence
@@ -208,6 +209,7 @@ def main():
     parser.add_argument("--out_tomove", default= None, help="Output corrected tomove")
     parser.add_argument("--out_warp", required=True, help="Output warp field (.npy)")
     parser.add_argument("--gpu", type=int, default=0)
+    parser.add_argument("--bin", type=int, default=2)
     parser.add_argument("--out_overlay", required=True, help="Output overlay PNG")
     parser.add_argument("--shift_global", nargs=3, type=float, default=[0,0,0])
 
@@ -226,9 +228,16 @@ def main():
         tomove = tiff.imread(args.tomove).astype(np.float32)
     
     #binning
+    '''
+    if args.bin > 1:
+        moving = moving[:, ::args.bin, ::args.bin]
+        reference = reference[:, ::args.bin, ::args.bin]
+    '''
 
-    moving = moving[:, ::2, ::2]
-    reference = reference[:, ::2, ::2]
+    if args.bin > 1:
+        scale = 1.0 / args.bin
+        moving = zoom(moving, (1, scale, scale), order=1)
+        reference = zoom(reference, (1, scale, scale), order=1)
     
     shift_global=args.shift_global
     
