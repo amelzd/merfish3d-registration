@@ -162,11 +162,13 @@ def correct_deformation(
     block_size = cp.asarray(block_size, dtype=cp.float32)
     block_stride = cp.asarray(block_stride, dtype=cp.float32)
     offset = -(block_size / block_stride) / 2
-
+    
+'''
     print('tomove:',type(tomove_image))
     print('warp_field:',type(warp_field))
     print('block_stride:',type(block_stride))
     print('offset:',type(offset))
+'''
 
     #### 3D correction applied (warpfield) 
     if tomove_image is not None:
@@ -185,7 +187,7 @@ def correct_deformation(
         cp.get_default_memory_pool().free_all_blocks()
         cp.get_default_pinned_memory_pool().free_all_blocks()
 
-    return (moving_corrected.astype(np.float32), None if tomove_image is None else tomove_corrected_cp.astype(np.float32),warp_field)
+    return (moving_corrected.astype(np.float32), None if tomove_image is None else tomove_corrected.astype(np.float32),warp_field)
 
 
 def main():
