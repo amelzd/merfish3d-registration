@@ -201,6 +201,67 @@ def correct_deformation(
     return (moving_corrected.astype(np.float32), None if tomove_image is None else tomove_corrected.astype(np.float32),warp_field)
 
 
+
+#####register3D deeds overlay 
+class BothImgRbgFile:
+    def __init__(self, image1, image2, tag='', title=''):
+        self.image1 = image1
+        self.image2 = image2
+        self.tag = tag
+        if title is None:
+            self.title = tag  # gets title from tag
+        else:
+            self.title = title  # New attribute to hold the title
+
+    def save(self, folder_path, basename):
+        self.folder_path = folder_path
+        self.basename = f"{basename}_{self.tag}_overlay"
+        self.path_name = os.path.join(self.folder_path, self.basename + ".png")
+        
+        # Normalize images and rescale intensity
+        img_1 = self.image1 / self.image1.max()
+        img_2 = self.image2 / self.image2.max()
+        img_1 = exposure.rescale_intensity(img_1, out_range=(0, 1))
+        img_2 = exposure.rescale_intensity(img_2, out_range=(0, 1))
+        
+        # Create the figure and axis
+        fig, ax1 = plt.subplots()
+        fig.set_size_inches((30, 30))
+        
+        # Create RGB overlay image
+        null_image = np.zeros(img_1.shape)
+        rgb = np.dstack([img_1, img_2, null_image])
+        
+        # Display the image and set the title
+        ax1.imshow(rgb)
+        ax1.axis("off")
+        ax1.set_title(self.title)  # Set the title of the figure
+        
+        # Save the figure
+        fig.savefig(self.path_name)
+        plt.close(fig)
+
+
+def plot_4_images(allimages, titles=None):
+    if titles is None:
+        titles = [
+            "reference",
+            "cycle <i>",
+            "processed reference",
+            "processed cycle <i>",
+        ]
+
+    fig, axes = plt.subplots(2, 2)
+    fig.set_size_inches((10, 10))
+    ax = axes.ravel()
+
+    for axis, img, title in zip(ax, allimages, titles):
+        axis.imshow(img, cmap="Greys")
+        axis.set_title(title)
+    fig.tight_layout()
+
+    return fig
+
 def main():
     parser = argparse.ArgumentParser( description="Apply GPU deformation correction (warpfield optical flow).")
 
