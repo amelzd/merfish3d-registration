@@ -192,9 +192,9 @@ def main():
 
     parser.add_argument("--reference", required=True, help="Reference image ")
     parser.add_argument("--moving", required=True, help="Moving image ")
-    parser.add_argument("--tomove", required=True, help="Image to apply same correction")
+    parser.add_argument("--tomove", default = None, help="Image to apply same correction")
     parser.add_argument("--out_moving", required=True, help="Output corrected moving")
-    parser.add_argument("--out_tomove", required=True, help="Output corrected tomove")
+    parser.add_argument("--out_tomove", default= None, help="Output corrected tomove")
     parser.add_argument("--out_warp", required=True, help="Output warp field (.npy)")
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--out_overlay", required=True, help="Output overlay PNG")
