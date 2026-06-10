@@ -249,10 +249,11 @@ def main():
     
     print(f"Saving images in: {args.output}")
     # Saving outputs
-    tiff.imwrite(args.output +  os.path.basename(args.moving), np.clip(moving_corr, np.iinfo(orig_dtype_mov).min, np.iinfo(orig_dtype_mov).max).astype(orig_dtype_mov) )
+    
+    tiff.imwrite(os.path.join(args.output, os.path.basename(args.moving)), np.clip(moving_corr, np.iinfo(orig_dtype_mov).min, np.iinfo(orig_dtype_mov).max).astype(orig_dtype_mov) )
     if tomove_corr is not None and args.tomove is not None:
-        tiff.imwrite(args.output +  os.path.basename(args.tomove), np.clip(tomove_corr, np.iinfo(orig_dtype).min,  np.iinfo(orig_dtype).max,).astype(orig_dtype) )
-    np.save(args.output, warp_field)
+        tiff.imwrite(os.path.join(args.output, os.path.basename(args.tomove)), np.clip(tomove_corr, np.iinfo(orig_dtype).min,  np.iinfo(orig_dtype).max,).astype(orig_dtype) )
+    np.save(os.path.join(args.output, "warp_field.npy"), warp_field)
 
     # rgb overlay marcelo
     overlay = BothImgRbgFile(reference.max(axis=0), moving.max(axis=0), tag='reference_original')
