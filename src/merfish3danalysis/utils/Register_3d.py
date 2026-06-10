@@ -5,6 +5,7 @@ import cupy as cp
 import matplotlib.pyplot as plt
 import tifffile as tiff
 from numpy.typing import ArrayLike
+from scipy.ndimage import shift as shift_image
 
 from warpfield.warp import warp_volume
 import gc
@@ -158,6 +159,11 @@ def correct_deformation(
     """
     cp.cuda.Device(gpu_id).use()
 
+    # apply register global
+    shift_3d = np.zeros((3))
+    shift_3d[0], shift_3d[1], shift_3d[2] = args.shifts[2], args.shifts[0], args.shifts[1]
+    moving_image = shift_image(moving_image, shift_3d)
+
     # Compute warp field with gpu
     moving_corrected, warp_field, block_size, block_stride = compute_warpfield(
         reference_image,
@@ -202,6 +208,7 @@ def main():
     parser.add_argument("--out_warp", required=True, help="Output warp field (.npy)")
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--out_overlay", required=True, help="Output overlay PNG")
+    parser.add_argument("--shift_global", default= 1 1 1, help="Shit x y z to apply beforehand")
 
     args = parser.parse_args()
 
