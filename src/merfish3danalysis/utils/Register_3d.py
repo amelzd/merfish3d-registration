@@ -165,8 +165,8 @@ def correct_deformation(
 
     print('tomove:',type(tomove_image))
     print('warp_field:',type(warp_field))
-    print(type('block_stride:',block_stride))
-    print(type('offset:',offset))
+    print('block_stride:',type(block_stride))
+    print('offset:',type(offset))
 
     #### 3D correction applied (warpfield) 
     tomove_corrected_cp = warp_volume(
