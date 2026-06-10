@@ -29,7 +29,7 @@ conda install -c conda-forge cupy cuda-version=12
 pip install warpfield
 python -m pip install matplotlib tifffile
 '''
-## pre process image #########################################################
+## Preprocess image (from pyhim_tools)
 def _remove_inhomogeneous_background(im, box_size=(32, 32), filter_size=(3, 3), parallel_execution=True, background=False):
     if len(im.shape) == 2:
         return _remove_inhomogeneous_background_2d(im, filter_size=filter_size, background=background)
@@ -79,7 +79,7 @@ def preprocess_3d_image(x, lower_threshold, higher_threshold, parallel_execution
     return image
 
 
-######### compute_warpfield()  from utils/registration.py ####################
+## compute_warpfield()  from merfish3d/utils/registration.py ####################
 def compute_warpfield(
     img_ref: ArrayLike, img_trg: ArrayLike, gpu_id: int = 0
 ) -> tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]:
